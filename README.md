@@ -130,9 +130,7 @@ Long-press anywhere to open the settings overlay:
 ## Credits
 
 **Created by [Jacob Yount](https://github.com/CummingsElec)**
-Cummings Electrical & Industrial Maintenance
-
-Built with assistance from **Claude** (Anthropic) via Cursor IDE.
+Cummings Electrical Integrated Manufacturing
 
 ### Third-Party
 
