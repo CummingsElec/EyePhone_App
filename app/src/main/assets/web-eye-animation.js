@@ -76,6 +76,8 @@
         "#customColorHex{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 10px;color:#fff;font:500 13px/1 monospace;width:100px;outline:none}",
         "#customColorHex:focus{border-color:rgba(0,229,255,0.5)}",
         "#applyCustomColor{background:rgba(0,229,255,0.2);border:1px solid rgba(0,229,255,0.3);border-radius:8px;padding:8px 14px;color:#00e5ff;font:600 12px/1 system-ui,sans-serif;cursor:pointer;-webkit-tap-highlight-color:transparent}",
+        "#refreshEyes{display:block;width:100%;margin-top:10px;padding:10px;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.25);border-radius:10px;color:rgba(0,229,255,0.8);font:600 12px/1 system-ui,sans-serif;cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent}",
+        "#refreshEyes:active{background:rgba(0,229,255,0.25)}",
         "#closeMenu{display:block;width:100%;margin-top:4px;padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:rgba(255,255,255,0.5);font:600 12px/1 system-ui,sans-serif;cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent}",
         "#passcodeOverlay{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.92);z-index:10000;justify-content:center;align-items:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}",
         "#passcodeOverlay.open{display:flex}",
@@ -260,6 +262,7 @@
         '<div class="toggle-row"><span class="toggle-label">Auto Snapshot</span><div class="toggle-track" id="snapshotToggle"><div class="toggle-knob"></div></div></div>',
         '<div class="toggle-row"><span class="toggle-label">Snapshots</span><span class="snap-count" id="snapCountLabel">0</span><div class="snap-clear" id="clearSnapsBtn">Clear</div></div>',
         '</div>',
+        '<div id="refreshEyes">\u21BB REFRESH</div>',
         '<div id="closeMenu">CLOSE</div></div>'
     ].join("");
     document.body.appendChild(menuEl);
@@ -350,7 +353,9 @@
                 } else if(name==="joy"||name==="excitement") {
                     gsap.timeline()
                         .to(eyes,{y:"-=6",duration:0.08,yoyo:true,repeat:2})
-                        .to(brows,{y:h.browY-4,duration:0.08,yoyo:true,repeat:2},0);
+                        .to(brows,{y:h.browY-4,duration:0.08,yoyo:true,repeat:2},0)
+                        .to(eyes,{y:0,duration:0.1})
+                        .to(brows,{y:h.browY,duration:0.1},"<");
                 } else if(name==="fear") {
                     gsap.timeline()
                         .to(brows,{x:"+=3",duration:0.05,yoyo:true,repeat:5})
@@ -435,6 +440,8 @@
         if(window.RobotConfig){RobotConfig.clearSnapshots();snapCount=0;snapCountLabel.textContent="0"}
     });
 
+    var refreshBtn=document.getElementById("refreshEyes");
+    refreshBtn.addEventListener("click",function(){resetEyes();closeMenu()});
     closeBtn.addEventListener("click",closeMenu);
     menuEl.addEventListener("click",function(e){if(e.target===menuEl)closeMenu()});
 
@@ -609,6 +616,42 @@
         if(!ok){stopMoodCycle();if(activeMood)exitMood()}
     }
 
+    // ===== RESET =====
+    function resetEyes() {
+        stopEmphasis();
+        stopMoodCycle();
+        activeMood = null;
+        currentHold = null;
+        isAnimating = false;
+        touchActive = false;
+        imuActive = false;
+        if (reactiveTid) { clearTimeout(reactiveTid); reactiveTid = null; }
+        reactingTo = null;
+        lastFaceDetected = false;
+        if (faceLostTid) { clearTimeout(faceLostTid); faceLostTid = null; }
+
+        G().then(function() {
+            gsap.killTweensOf(eyes);
+            gsap.killTweensOf(brows);
+            gsap.killTweensOf(irises);
+            gsap.killTweensOf(pupils);
+            gsap.killTweensOf(L.brow);
+            gsap.killTweensOf(R.brow);
+
+            gsap.set(eyes, {scaleY:1, scaleX:1, borderRadius:"50%", y:0, x:0, rotation:0});
+            gsap.set(brows, {y:0, scaleY:1, scaleX:1, rotation:0, x:0});
+            gsap.set(L.brow, {borderRadius:REST_BR.left, rotation:0});
+            gsap.set(R.brow, {borderRadius:REST_BR.right, rotation:0});
+            gsap.set(irises, {x:0, y:0});
+            gsap.set(pupils, {x:0, y:0});
+
+            Object.keys(moodBtns).forEach(function(k){ moodBtns[k].className = "mood-btn"; });
+
+            scheduleBlink();
+            scheduleBrowIdle();
+        });
+    }
+
     // ===== IDLE BROW =====
     function idleBrowTwitch(){
         if(isAnimating||activeMood){scheduleBrowIdle();return}
@@ -739,7 +782,8 @@
         customColor:setCustomColor,imu:onIMU,face:onFace,
         faceTrackingStatus:onFaceTrackingStatus,menu:tryOpenMenu,
         onSnapshotCount:function(c){snapCount=c;snapCountLabel.textContent=String(c)},
-        onBattery:function(pct,charging){batPct=pct;batCharging=charging;updateBatUI()}
+        onBattery:function(pct,charging){batPct=pct;batCharging=charging;updateBatUI()},
+        reset:resetEyes
     };
 
     // Load persisted settings from bridge

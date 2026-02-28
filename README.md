@@ -50,22 +50,38 @@ controller/
 - JDK 17
 - ADB
 
-### Build & Install
+### Build & Deploy to Device
 
 ```bash
 # Clone
 git clone https://github.com/CummingsElec/EyePhone_App.git
 cd EyePhone_App
 
-# Set your Android SDK path
+# Point Gradle at your Android SDK (gitignored — one-time setup)
 echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
 
-# Build
-chmod +x gradlew
-./gradlew assembleDebug
+# If JDK 17 is installed but not on your PATH (common with Homebrew):
+export JAVA_HOME="$(brew --prefix openjdk@17)"
+export PATH="$JAVA_HOME/bin:$PATH"
 
-# Install to connected device
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+# Verify toolchain
+java -version          # should show 17.x
+adb devices            # should list your device
+
+# Make gradlew executable (one-time)
+chmod +x gradlew
+
+# Build + install directly to connected device
+./gradlew installDebug
+
+# Launch the app
+adb shell am start -n com.ceim.roboteyes/.MainActivity
+```
+
+For subsequent pushes after code changes, just repeat:
+
+```bash
+./gradlew installDebug && adb shell am start -n com.ceim.roboteyes/.MainActivity
 ```
 
 ### Kiosk Mode (Optional)
@@ -109,6 +125,7 @@ Long-press anywhere to open the settings overlay:
 - **Kiosk Lock** — Lock the app with passcode protection
 - **Auto Snapshot** — Save periodic detection frames to local storage
 - **Snapshot Management** — View count, clear stored snapshots
+- **Refresh** — Reset all eye animations and positions to neutral (fixes drift or visual glitches)
 
 ## Credits
 
