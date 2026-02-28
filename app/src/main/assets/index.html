@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Robot Eyes</title>
+    <meta name="websocket-port" content="8765">
+    <meta name="websocket-protocol" content="ws">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    </style>
+</head>
+<body>
+    <div class="eye-container"></div>
+    <script src="gsap.min.js"></script>
+    <script src="web-eye-animation.js"></script>
+    <script>
+        // Auto-connect to WebSocket server if host is provided via Android bridge
+        if (window.RobotConfig) {
+            var host = window.RobotConfig.getHost();
+            if (host && host !== "") {
+                eyes.websocket(host, 8765, "ws");
+            }
+        }
+    </script>
+</body>
+</html>
